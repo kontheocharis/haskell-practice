@@ -3,10 +3,18 @@ import Data.Maybe
 import Debug.Trace
 import System.Environment
 
-data BinaryExpr = Add | Subtract | Multiply | Divide | Power
+data BinaryExpr
+  = Add
+  | Subtract
+  | Multiply
+  | Divide
+  | Power
   deriving (Show, Eq)
 
-data BinaryPrec = PowerPrec | MulDivPrec | AddSubPrec
+data BinaryPrec
+  = PowerPrec
+  | MulDivPrec
+  | AddSubPrec
   deriving (Show, Eq)
 
 opsForPrec :: BinaryPrec -> [Char]
@@ -23,7 +31,13 @@ exprForOp '*' = Multiply
 exprForOp '/' = Divide
 exprForOp '^' = Power
 
-data FunctionType = Sin | Cos | Tan | Ln | Log | Sqrt
+data FunctionType
+  = Sin
+  | Cos
+  | Tan
+  | Ln
+  | Log
+  | Sqrt
   deriving (Show, Eq)
 
 funcTypeForLiteral :: [Char] -> Maybe FunctionType
@@ -35,7 +49,11 @@ funcTypeForLiteral "log" = Just Log
 funcTypeForLiteral "sqrt" = Just Sqrt
 funcTypeForLiteral other = Nothing
 
-data Expr = Binary BinaryExpr Expr Expr | Literal Double | Function FunctionType Expr | Neg Expr
+data Expr
+  = Binary BinaryExpr Expr Expr
+  | Literal Double
+  | Function FunctionType Expr
+  | Neg Expr
   deriving (Show)
 
 findFirstOpAcc :: Int -> [Char] -> BinaryPrec -> [Char] -> Maybe (Char, [Char], [Char])
