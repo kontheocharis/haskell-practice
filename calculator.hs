@@ -14,6 +14,8 @@ opsForPrec PowerPrec = ['^']
 opsForPrec MulDivPrec = ['*', '/']
 opsForPrec AddSubPrec = ['+', '-']
 
+allOps = ['+', '-', '*', '/']
+
 exprForOp :: Char -> BinaryExpr
 exprForOp '+' = Add
 exprForOp '-' = Subtract
@@ -38,12 +40,12 @@ data Expr = Binary BinaryExpr Expr Expr | Literal Double | Function FunctionType
 
 findFirstOpAcc :: Int -> [Char] -> BinaryPrec -> [Char] -> Maybe (Char, [Char], [Char])
 findFirstOpAcc parensFound acc prec [] = Nothing
-findFirstOpAcc parensFound acc prec input@(f:curr)
+findFirstOpAcc parensFound acc prec input@(f : curr)
   | f == '(' = findFirstOpAcc (parensFound + 1) (acc ++ [f]) prec curr
   | f == ')' = findFirstOpAcc (parensFound - 1) (acc ++ [f]) prec curr
   | parensFound == 0
       && prec == AddSubPrec
-      && (null acc || let p = last acc in (p `notElem` ['0' .. '9'] && p /= ')')) =
+      && (null acc || last acc `elem` allOps) =
     findFirstOpAcc parensFound (acc ++ [f]) prec curr
   | parensFound == 0 && f `elem` opsForPrec prec =
     if null acc || null curr
@@ -56,18 +58,21 @@ findFirstOp = findFirstOpAcc 0 []
 
 parseLiteralAcc :: [Char] -> Bool -> [Char] -> Maybe Expr
 parseLiteralAcc acc foundPeriod []
-  | last acc /= '.' = Just $ Literal $ read acc
-  | otherwise = Nothing
-parseLiteralAcc acc foundPeriod input@(f:rest)
+  | last acc == '.' = Just $ Literal $ read (acc ++ "0")
+  | head acc == '.' = Just $ Literal $ read ("0" ++ acc)
+  | otherwise = Just $ Literal $ read acc
+parseLiteralAcc acc foundPeriod input@(f : rest)
   | f `elem` ['0' .. '9'] = parseLiteralAcc (acc ++ [f]) foundPeriod rest
-  | f == '.' && acc /= [] && not foundPeriod = parseLiteralAcc (acc ++ [f]) True rest
+  | f == '.' && not foundPeriod = parseLiteralAcc (acc ++ [f]) True rest
   | otherwise = Nothing
 
 parseLiteral :: [Char] -> Maybe Expr
-parseLiteral = parseLiteralAcc [] False
+parseLiteral "pi" = Just $ Literal pi
+parseLiteral "e" = Just $ Literal (exp 1)
+parseLiteral input = parseLiteralAcc [] False input
 
 parseParens :: [Char] -> Maybe Expr
-parseParens input@(f:rest)
+parseParens input@(f : rest)
   | f == '(' && t == ')' = (parseExpr . init) rest
   | otherwise = Nothing
   where
@@ -83,7 +88,7 @@ parseBinary prec input
 
 parseFunctionNameAcc :: [Char] -> [Char] -> Maybe ([Char], [Char])
 parseFunctionNameAcc acc [] = Nothing
-parseFunctionNameAcc acc input@(f:rest)
+parseFunctionNameAcc acc input@(f : rest)
   | f `elem` ['a' .. 'z'] = parseFunctionNameAcc (acc ++ [f]) rest
   | null acc = Nothing
   | otherwise = Just (acc, input)
@@ -100,7 +105,7 @@ parseFunction input
   | otherwise = Nothing
 
 parseNeg :: [Char] -> Maybe Expr
-parseNeg input@(f:rest)
+parseNeg input@(f : rest)
   | f == '-' = parseExpr rest >>= Just . Neg
   | otherwise = Nothing
 
