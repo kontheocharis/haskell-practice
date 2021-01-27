@@ -57,21 +57,23 @@ findFirstOp :: BinaryPrec -> [Char] -> Maybe (Char, [Char], [Char])
 findFirstOp = findFirstOpAcc 0 []
 
 parseLiteralAcc :: [Char] -> Bool -> [Char] -> Maybe Expr
+parseLiteralAcc [] foundPeriod [] = Nothing
 parseLiteralAcc acc foundPeriod []
-  | last acc == '.' = Just $ Literal $ read (acc ++ "0")
-  | head acc == '.' = Just $ Literal $ read ("0" ++ acc)
-  | otherwise = Just $ Literal $ read acc
+  | last acc == '.' = Just . Literal $ read (acc ++ "0")
+  | head acc == '.' = Just . Literal $ read ("0" ++ acc)
+  | otherwise = Just . Literal $ read acc
 parseLiteralAcc acc foundPeriod input@(f : rest)
   | f `elem` ['0' .. '9'] = parseLiteralAcc (acc ++ [f]) foundPeriod rest
   | f == '.' && not foundPeriod = parseLiteralAcc (acc ++ [f]) True rest
   | otherwise = Nothing
 
 parseLiteral :: [Char] -> Maybe Expr
-parseLiteral "pi" = Just $ Literal pi
-parseLiteral "e" = Just $ Literal (exp 1)
+parseLiteral "pi" = Just . Literal $ pi
+parseLiteral "e" = Just . Literal $ exp 1
 parseLiteral input = parseLiteralAcc [] False input
 
 parseParens :: [Char] -> Maybe Expr
+parseParens [] = Nothing
 parseParens input@(f : rest)
   | f == '(' && t == ')' = (parseExpr . init) rest
   | otherwise = Nothing
@@ -97,6 +99,7 @@ parseFunctionName :: [Char] -> Maybe ([Char], [Char])
 parseFunctionName = parseFunctionNameAcc []
 
 parseFunction :: [Char] -> Maybe Expr
+parseFunction [] = Nothing
 parseFunction input
   | Just (functionName, rest) <- parseFunctionName input = do
     funcType <- funcTypeForLiteral functionName
@@ -105,6 +108,7 @@ parseFunction input
   | otherwise = Nothing
 
 parseNeg :: [Char] -> Maybe Expr
+parseNeg [] = Nothing
 parseNeg input@(f : rest)
   | f == '-' = parseExpr rest >>= Just . Neg
   | otherwise = Nothing
